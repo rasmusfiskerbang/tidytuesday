@@ -1,0 +1,90 @@
+---
+title: "dolphins"
+author: "Rasmus Fisker Bang"
+date: "19/12/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# Clearing data and console
+cat("\014")
+rm(list = ls())
+
+# Loading packages
+library(tidyverse)
+library(lubridate)
+
+# Setting ggplot theme
+theme_set(theme_bw())
+
+# Loading data
+dolphins_raw <- read_csv("allCetaceanData.csv")
+```
+
+### Cleaning and feature engineering
+
+```{r}
+dolphins <- dolphins_raw %>% 
+  # Removing X1 column
+  select(-X1) %>% 
+  # creating NA's
+  mutate(sex = na_if(sex, "U"),
+         acquisition = na_if(acquisition, "Unknown"),
+         currently = na_if(currently, "Unknown"),
+         status = na_if(status, "Realeased?"),
+         COD = na_if(COD, "-")) %>% 
+  # Removing unrecognized charcters in notes
+  mutate(notes = str_remove_all(notes,"�")) %>% 
+  # Creating age columns
+  mutate(birthYear = as.numeric(birthYear)) %>% 
+  mutate(age = ifelse(status == "Alive",
+                      year(Sys.Date()) - birthYear,
+                      year(statusDate) - birthYear)) %>% 
+  mutate(age = ifelse(age >= 0, age, 0))
+```
+
+### EDA
+
+#### Questions
+
+1. What kind of species do we have? 
+2. What is the gender distribution
+3. 
+
+#### Answer 1
+
+```{r}
+library(tidyverse)
+
+dolphins %>% mutate(species = fct_lump(species, 4)) %>% 
+  count(species, sort = TRUE) %>% 
+  mutate(species = fct_reorder(species, n)) %>% 
+  ggplot(aes(species, n)) + geom_col() +
+  coord_flip()
+```
+
+
+#### Answer 2
+
+```{r}
+dolphins %>% count(sex, sort = TRUE) %>% 
+  filter(!is.na(sex)) %>% 
+  ggplot(aes(sex, n)) + geom_col()
+```
+
+
+#### Answer 3
+
+```{r}
+
+```
+
+
+  
+
+
+
+
+
