@@ -1,0 +1,73 @@
+---
+title: "Untitled"
+author: "Rasmus Fisker Bang"
+date: "2/1/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# Loading packages
+library(tidyverse)
+library(DescTools)
+
+# Loading data
+rstats <- readRDS("rstats_tweets.rds")
+```
+
+### Questions
+
+1. Who has tweeted the most?
+2. Who gets most likes and retweets?
+
+### Answer 1
+
+```{r answer 1}
+rstats %>% filter(!is_retweet) %>% count(name, sort = TRUE) %>% 
+  mutate(name = fct_reorder(name, n)) %>% 
+  top_n(20) %>% 
+  ggplot(aes(name, n)) + geom_col() + coord_flip()
+```
+
+### Answer 2
+
+```{r answer 2}
+
+likes_retweets <- rstats %>% filter(!is_retweet & !is_quote) %>% 
+  group_by(name) %>% mutate(total = n()) %>% 
+  filter(total >= 100) %>% 
+  summarise(likes = list(MedianCI(favorite_count)),
+            retweets = list(MedianCI(retweet_count)),
+            total = n()) %>% 
+  unnest() %>% gather("types","value",likes, retweets) %>%  
+  mutate(type = rep(c("median","low","high"), nrow(.)/3)) %>% 
+  spread(type, value) %>% 
+  unite(median_combined, high:median) %>% 
+  spread(types, median_combined) %>% 
+  separate(likes, c("likes_high","likes_low","likes_median")) %>% 
+  separate(retweets, c("retweets_high","retweets_low","retweets_median")) %>% 
+  mutate_at(vars(likes_high:retweets_median), as.numeric) %>% 
+  arrange(desc(likes_low))
+
+p1 <- likes_retweets %>% arrange(desc(likes_median)) %>% 
+  head(20) %>% mutate(name = fct_reorder(name, likes_median)) %>% 
+  ggplot(aes(name, likes_median))+ geom_point() + coord_flip() +
+  geom_errorbar(aes(ymin = likes_low, ymax = likes_high))
+
+p2 <- likes_retweets %>% arrange(desc(retweets_median)) %>% 
+  head(20) %>% mutate(name = fct_reorder(name, retweets_median)) %>% 
+  ggplot(aes(name, retweets_median))+ geom_point() + coord_flip() +
+  geom_errorbar(aes(ymin = retweets_low, ymax = retweets_high))
+
+likes_retweets %>% 
+  ggplot(aes(likes_median, retweets_median)) + geom_point()
+
+
+```
+
+
+
+
+
+
