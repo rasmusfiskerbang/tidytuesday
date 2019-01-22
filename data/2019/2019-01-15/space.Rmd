@@ -1,0 +1,92 @@
+---
+title: "space"
+author: "Rasmus Fisker Bang"
+date: "14/1/2019"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(colorspace)
+
+agencies <- read_csv("agencies.csv")
+launches <- read_csv("launches.csv")
+```
+
+```{r}
+# Theme function
+theme_black <- function() {
+  theme(plot.background = element_rect(fill = "#2B2B2B", color = "#2B2B2B"),
+        plot.title = element_text(color = "white"),
+        plot.subtitle = element_text(color = "white"),
+        plot.caption = element_text(color = "#656565", size = 6),
+        panel.background = element_rect(fill = "#2B2B2B"),
+        panel.grid = element_line(color = "#656565"),
+        legend.background = element_rect(fill = "#2B2B2B"),
+        legend.key = element_blank(),
+        legend.title = element_text(color = "#656565"),
+        legend.text = element_text(color = "#656565"),
+        axis.title = element_text(color = "#656565"),
+        axis.text = element_text(color = "#656565"))
+}
+
+# Number of launches through the years
+launches %>% count(half_decade = launch_year - launch_year %% 10) %>% 
+  ggplot(aes(half_decade, n)) + geom_line(color = "white") +
+  geom_point(color = "white") +
+  scale_x_continuous(breaks = seq(1950,2010,10)) +
+  labs(title = "Number of launches in each decade", 
+       y = "Number of launches", x = "Decade") +
+  theme_black()
+
+```
+
+```{r}
+# Number of launches for different space crafts
+launches %>% 
+  count(type, state_code, sort = TRUE) %>% 
+  group_by(type) %>% 
+  summarise(n = sum(n), 
+            state_code = str_c(state_code, collapse = " - ")) %>% 
+  arrange(desc(n)) %>% 
+  mutate(type = fct_reorder(type, n)) %>% 
+  head(20) %>% 
+  ggplot(aes(type, n, fill = state_code)) + geom_col() +
+  coord_flip() +
+  theme_black() +
+  labs(title = "Number of launches for different rockets",
+       x = "Rocket type", y = "Number of launches",
+       fill = "Country", 
+       caption = "RU = Russia, CN = China, F = France, SU = Soviet Union, US = United States, I-ESA = European Space Agency")
+
+```
+
+```{r}
+launches %>% count(agency_type, category) %>% 
+  group_by(agency_type) %>% mutate(percent = n/sum(n))
+
+p3 <- launches %>% count(type, category) %>% 
+  group_by(type) %>% 
+  mutate(total = sum(n), percent = n/total,
+         percent_low = percent-1.96*sqrt(percent*(1-percent)/total),
+         percent_high = percent+1.96*sqrt(percent*(1-percent)/total)) %>% 
+  filter(category == "F", total > 50) %>% 
+  arrange(desc(percent)) %>% ungroup() %>% 
+  mutate(type = fct_reorder(type, percent),
+         percent_low = if_else(percent_low < 0, 0, percent_low)) %>% 
+  ggplot(aes(type, percent)) + geom_point(color = "white") + coord_flip() +
+  geom_errorbar(aes(ymin = percent_low, ymax = percent_high), color = "white") +
+  theme_black() +
+  scale_y_continuous(labels = scales::percent_format()) +
+  labs(title = "Launch failure rate for different rocket types",
+       x = "Rocket type", y = "Launch failure rate")
+
+ggsave("plot1.png", plot = p1)
+ggsave("plot2.png", plot = p2)
+ggsave("plot3.png", plot = p3)
+```
+
+
+
+
+
