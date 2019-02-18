@@ -1,0 +1,86 @@
+---
+title: "Untitled"
+author: "Rasmus Fisker Bang"
+date: "4/2/2019"
+output: html_document
+---
+
+```{r}
+
+# Loading packages
+library(tidyverse)
+library(lubridate)
+library(tibbletime)
+library(gganimate)
+library(maps)
+library(ggthemes)
+
+# Loading data
+state_hpi <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-02-05/state_hpi.csv")
+mortgage_rates <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-02-05/mortgage.csv")
+recession_dates <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-02-05/recessions.csv")
+```
+
+
+```{r}
+# Cleaning data
+# state_hpi
+state_hpi <- state_hpi %>% 
+  mutate(date = ymd(str_c(year, month, 1, sep = "-"))) %>% 
+  select(date, state:us_avg) %>% 
+  as_tbl_time(index = date)
+
+# mortage rates
+mortgage_rates <- mortgage_rates %>% 
+  as_tbl_time(index = date) %>% 
+  arrange(date) %>% 
+  collapse_by(period = "monthly", side = "start", clean = TRUE) %>% 
+  group_by(date) %>% filter(row_number() == last(row_number())) %>% 
+  ungroup() %>% mutate(date = date + months(1)) %>% 
+  filter_time(min(state_hpi$date) ~ max(state_hpi$date)) %>% 
+  select(date:fees_and_pts_30_yr)
+
+# collecting data
+economy <- state_hpi %>% left_join(mortgage_rates, by = "date")
+
+```
+
+## Making map animation over time
+
+```{r}
+
+states <- st_as_sf(map("state", plot = FALSE, fill = TRUE))
+
+economy_small <- economy %>% arrange(date, state) %>% 
+  collapse_by(period = "yearly", side = "start") %>% group_by(date, state) %>% 
+  filter(row_number() == first(row_number())) %>% ungroup()
+
+
+economy_map_data <- economy_small %>% 
+  left_join(data.frame(state = state.abb, state_name = tolower(state.name))) %>% 
+  select(-state) %>% 
+  select(date, state = state_name, everything()) %>% 
+  filter(state %in% unique(states$ID)) %>% 
+  mutate(percent_diff = price_index/us_avg-1) %>% 
+  as_tibble() %>% 
+  mutate(date = as.integer(year(date))) %>% 
+  left_join(states, by = c("state" = "ID"))
+
+map_animation <- economy_map_data %>%
+  ggplot(aes(fill = percent_diff)) + geom_sf() +
+  scale_fill_gradient2() + 
+  theme_void() +
+  theme(panel.grid.major = element_line(colour = 'transparent')) +
+  transition_time(date) +
+  labs(title = "Percentage differnce between state price index and US average", 
+       subtitle = "Year: {frame_time}")
+
+animate(map_animation, width = 1000, height = 1000, unit = "px")
+
+
+```
+
+
+
+
+

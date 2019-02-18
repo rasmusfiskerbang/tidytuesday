@@ -1,0 +1,69 @@
+---
+title: "Government Spending"
+author: "Rasmus Fisker Bang"
+date: "12/2/2019"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(colorspace)
+
+theme_set(theme_bw())
+
+climate <- read_csv("climate_spending.csv")
+energy <- read_csv("energy_spending.csv")
+fed_r_d <- read_csv("fed_r_d_spending.csv")
+
+departments <- c("DOD - Deparment of Defense * NASA - National Aeronautics and Space Administration * DOE - Department of Energy * HHS - Department of Health and Human Services * NIH - National Institute of Health * NSF - National Science Foundation * USDA - US Department of Agriculture * Interior - Department of Interior * DOT - Deparment of Transportation * EPA - Environmental Protection Agency * DOC - Department of Corrections * DHS - Department of Homeland Security * VA - Department of Veterands Affairs * Other - other research and development spending") %>% str_split(" \\* ") %>% unlist() %>% 
+  str_split(" \\- ") %>% unlist() %>% matrix(., ncol = 2, byrow = TRUE) %>% 
+  as_tibble() %>% setNames(c("department","name"))
+
+```
+
+How has the total expenditures evolved over time?
+
+```{r}
+
+fed_r_d %>% group_by(year) %>% 
+  mutate(rd_budget_frac = rd_budget/sum(rd_budget),
+         department = fct_reorder(department, rd_budget_frac)) %>% 
+  ggplot(aes(year, rd_budget_frac, fill = department)) +
+  geom_area()
+
+```
+
+
+```{r}
+
+rel_spending_index <- fed_r_d %>% 
+  filter(department != "DHS") %>% 
+  group_by(year) %>% 
+  mutate(rd_budget_frac = rd_budget/sum(rd_budget)) %>% 
+  group_by(department) %>% 
+  mutate(rd_budget_frac_index = rd_budget_frac/first(rd_budget_frac)) %>% 
+  ungroup() %>% 
+  mutate(department = fct_reorder(department, rd_budget_frac_index, .fun = last))
+
+caption_index <- departments %>% filter(department != "DHS") %>% 
+  left_join(rel_spending_index %>% filter(year == max(year)) %>% 
+  arrange(desc(rd_budget_frac_index)) %>% select(department, rd_budget_frac_index)) %>% 
+  arrange(desc(rd_budget_frac_index)) %>% select(-rd_budget_frac_index) %>% 
+  unite(collapsed, department, name, sep = " - ") %>% pull() %>% 
+  str_c(., collapse = " * ") %>% str_wrap(., width = 140)
+
+rel_spending_index %>% 
+  ggplot(aes(year, rd_budget_frac_index, color = department)) + geom_line() +
+  guides(color = guide_legend(reverse = TRUE)) +
+  scale_y_continuous(labels = scales::percent_format()) +
+  labs(title = "Relative R&D spending index in the US", 
+       subtitle = "Index year = 1976",
+       y = "Relative spending index",
+       x = "Time", color = "Department", 
+       caption = caption_index)
+  
+ggsave("rel_spending_index.png", width = 10)
+
+```
+
+
