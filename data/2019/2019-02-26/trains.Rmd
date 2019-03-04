@@ -1,0 +1,78 @@
+---
+title: "trains"
+author: "Rasmus Fisker Bang"
+date: "25/2/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(SDMTools)
+library(corrr)
+
+trains <- read_csv("full_trains.csv")
+
+```
+
+
+### Transforming data
+
+```{r}
+
+
+
+```
+
+
+### Questions
+
+1. Which routes are the longest on average?
+2. Which routes gets cancelled the most?
+
+### Answer 1
+
+```{r}
+
+trains %>% group_by(departure_station, arrival_station) %>% 
+  summarise(journey_time_avg = mean(journey_time_avg)) %>% 
+  arrange(desc(journey_time_avg)) %>% 
+  ungroup() %>% 
+  top_n(20) %>% 
+  mutate(route = str_c(departure_station, arrival_station, sep = " - ")) %>% 
+  mutate(route = fct_reorder(route, journey_time_avg)) %>% 
+    ggplot(aes(route, journey_time_avg)) +
+    geom_col() +
+    coord_flip()
+
+```
+
+### Answer 2
+
+```{r}
+
+percent_format <- trains %>% group_by(departure_station, arrival_station) %>% 
+  mutate_at(vars(starts_with("num")), funs(temp = ./total_num_trips)) %>% 
+  rename_at(vars(ends_with("temp")), 
+            list(~ paste("percent", gsub("_temp", "", .), sep = "_"))) %>% 
+  mutate(weight = total_num_trips/sum(total_num_trips)) %>% 
+  summarise_at(vars(starts_with("percent"), starts_with("avg"), starts_with("delay")), 
+               funs(wt.mean(., weight), wt.sd(., weight))) %>% 
+  ungroup() %>% 
+  gather(variable, value, percent_num_of_canceled_trains_wt.mean:delay_cause_travelers_wt.sd) %>% 
+  separate(variable, c("variable","measure"), sep = "\\.") %>% 
+  mutate(variable = str_remove(variable, "_wt"))
+
+corr_matrix <- percent_format %>% filter(measure == "mean") %>% 
+  spread(variable, value) %>% select(-departure_station, -arrival_station, -measure) %>% 
+  correlate()
+
+rplot(corr_matrix) + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  labs(title = "Correlation matrix")
+```
+
+
+
+
