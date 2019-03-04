@@ -1,8 +1,11 @@
+<<<<<<< HEAD
 ---
 output:
   html_document: default
   pdf_document: default
 ---
+=======
+>>>>>>> 77b44385b3cdbcc73e1d9baabcfb189dc203f1c4
 # French Train stats
 
 We've focused a lot on US data over the past few weeks, so many thanks to [Mathilda](https://twitter.com/noccaea/status/1095735292206739456) for helping curate this week's French trains dataset! She posted an awesome visualization of this data - if you are interested in a heat-map style `geom_tile()`, take a look at her post [https://twitter.com/noccaea/status/1095735292206739456](https://twitter.com/noccaea/status/1095735292206739456).  
@@ -19,7 +22,11 @@ Lastly, if for some reason you'd like to see the raw untranslated dataset it is 
 ### Grab the raw data here
 
 ```{r}
+<<<<<<< HEAD
 trains_raw <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-02-26/full_trains.csv")
+=======
+full_trains <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-02-26/full_trains.csv")
+>>>>>>> 77b44385b3cdbcc73e1d9baabcfb189dc203f1c4
 small_trains <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-02-26/small_trains.csv") 
 ```
 
