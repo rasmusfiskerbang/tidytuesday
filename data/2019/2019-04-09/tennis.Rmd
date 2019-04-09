@@ -1,0 +1,78 @@
+---
+title: "Tennis"
+author: "Rasmus Fisker Bang"
+date: "9/4/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ggrepel)
+library(hrbrthemes)
+library(colorspace)
+
+# Loading data
+player_dob <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-04-09/player_dob.csv")
+
+grand_slams <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-04-09/grand_slams.csv")
+
+grand_slam_timeline <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-04-09/grand_slam_timeline.csv")
+
+# Setting theme
+theme_set(theme_ipsum_ps())
+
+```
+
+### How has the number of wins changed for the top players over time?
+
+
+```{r}
+library(tidyverse)
+library(ggrepel)
+library(hrbrthemes)
+library(colorspace)
+
+# Loading data
+player_dob <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-04-09/player_dob.csv")
+
+grand_slams <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-04-09/grand_slams.csv")
+
+grand_slam_timeline <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-04-09/grand_slam_timeline.csv")
+
+# Setting theme
+theme_set(theme_ipsum_ps())
+
+top_winning_names <- grand_slams %>% group_by(gender, name) %>% 
+  summarise(top_n_wins = max(rolling_win_count)) %>% 
+  group_by(gender) %>% filter(top_n_wins >= 10) %>% 
+  arrange(gender, desc(top_n_wins)) %>% pull(name)
+
+data_labels <- grand_slams %>% filter(name %in% top_winning_names) %>% 
+  group_by(name) %>% filter(rolling_win_count == max(rolling_win_count)) %>% 
+  ungroup()
+
+p1 <- grand_slams %>% 
+  ggplot(aes(tournament_date, rolling_win_count)) +
+  geom_step(aes(group = name), color = "grey") +
+  geom_step(aes(color = name), data = grand_slams %>% filter(name %in% top_winning_names)) +
+  geom_label_repel(data = data_labels, aes(label = name, color = name)) +
+  facet_wrap(~ gender, ncol = 1) +
+  guides(color = FALSE) +
+  labs(title = "Number of grand slam wins through time",
+       subtitle = "Players with more than 10 wins are highlighted",
+       x = "Date", y = "# of wins") +
+  scale_color_discrete_sequential("viridis") +
+  scale_x_date(breaks = as.Date(str_c(as.character(seq(1970,2010,10)),"01","01", sep = "-")),
+               labels = as.character(seq(1970,2010,10)))
+
+ggsave("n_wins.png", p1, width = 10, height = 10)
+
+```
+
+
+
+
+
+
+
