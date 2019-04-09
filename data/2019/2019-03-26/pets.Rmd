@@ -1,0 +1,118 @@
+---
+title: "pets"
+author: "Rasmus Fisker Bang"
+date: "25/3/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(lubridate)
+library(drlib)
+library(tidytext)
+
+pets <- read_csv("seattle_pets.csv")
+
+```
+
+## Pet names in Seattle
+
+First a look at the data
+
+```{r}
+pets
+```
+
+There are 52,519 different pets, and there 7 different variables. 
+First of all I notice that `license_issue_date` needs to be a proper date variable
+
+```{r}
+pets <- pets %>% mutate(license_issue_date = mdy(license_issue_date))
+```
+
+Easy fix! Then I wonder whether `license_number` is unique?
+
+```{r}
+pets %>% count(license_number, sort = TRUE)
+```
+
+It is not, there a few pets that appear more than once, 
+or some license numbers that appear again. Nevermind.
+
+Now we can ask some questions:
+
+### What are the most popular pet names?
+
+```{r}
+pets %>% count(animals_name, sort = TRUE) %>% 
+  head(20) %>% 
+  mutate(animals_name = fct_reorder(animals_name, n)) %>% 
+    ggplot(aes(animals_name, n)) +
+    geom_col() +
+    coord_flip()
+```
+
+Apparently Lucy is very popular, and charlie. It also seems like there are a lot
+pots who do not have any names?!
+
+### How many different species of pets are there?
+
+```{r}
+pets %>% count(species, sort = TRUE)
+```
+
+Mostly cats and dogs, and some goats and a few pigs, but lets ignore does 
+and remove animals without names as well
+
+```{r}
+pets <- pets %>% drop_na(animals_name) %>% 
+  filter(!species %in% c("Goat","Pig"))
+```
+
+### What are the most popular cat and dog names, respectively?
+
+```{r}
+pets %>% count(species, animals_name, sort = TRUE) %>% 
+  group_by(species) %>% 
+  top_n(20, n) %>% 
+  ungroup() %>% 
+  mutate(animals_name = reorder_within(animals_name, n, species)) %>% 
+  ggplot(aes(animals_name, n)) + geom_col() +
+  coord_flip() +
+  facet_wrap(~species, scales = "free") +
+  scale_x_reordered()
+```
+
+### Which names are most specific to dogs and cats?
+
+```{r}
+pets %>% count(species, animals_name, sort = TRUE) %>% 
+  spread(species, n) %>% 
+  mutate(Cat = coalesce(Cat, as.integer(0)),
+         Dog = coalesce(Dog, as.integer(0))) %>% 
+  filter(Cat > 10, Dog > 10) %>% 
+  mutate(species_measure = (Cat-Dog)/(Cat+Dog)) %>% 
+  mutate(primary_species = ifelse(Cat >= Dog, "Cat", "Dog")) %>% 
+  group_by(primary_species) %>% 
+  top_n(10, abs(species_measure)) %>% ungroup() %>% 
+  mutate(animals_name = fct_reorder(animals_name, species_measure)) %>% 
+  ggplot(aes(animals_name, species_measure)) + geom_col() +
+  coord_flip()
+  
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
