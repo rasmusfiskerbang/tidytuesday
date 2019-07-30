@@ -91,8 +91,11 @@ Want to submit a useful code-chunk? Please submit as a [Pull Request](https://gi
 | 14 | `2019-04-02` | [Seattle Bike Traffic](data/2019/2019-04-02) | [seattle.gov](http://www.seattle.gov/transportation/projects-and-programs/programs/bike-program/bike-counters) | [Seattle Times](https://www.seattletimes.com/seattle-news/transportation/what-we-can-learn-from-seattles-bike-counter-data/) |
 | 15 | `2019-04-09` | [Tennis Grand Slam Champions](data/2019/2019-04-09) | [Wikipedia](https://en.wikipedia.org/wiki/List_of_Grand_Slam_women%27s_singles_champions) | [Financial Times](https://ig.ft.com/sites/visual-history-of-womens-tennis/) |
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 02628fae7385b63feedd1d784db1488a1412f817
 =======
+=======
+>>>>>>> 52f8d21e6b88e4ceea0ad67ed599ffaa9f2b5a92
 | 16 | `2019-04-16` | [The Economist Data Viz Mistakes](data/2019/2019-04-16) | [The Economist](https://medium.economist.com/mistakes-weve-drawn-a-few-8cdd8a42d368) | [The Economist](https://medium.economist.com/mistakes-weve-drawn-a-few-8cdd8a42d368) |
 | 17 | `2019-04-23` | [Anime Data](data/2019/2019-04-23) | [MyAnimeList](https://www.kaggle.com/aludosan/myanimelist-anime-dataset-as-20190204) | [MyAnimeList](https://myanimelist.net/topanime.php?type=bypopularity) |
 | 18 | `2019-04-30` | [Chicago Bird Collisions](data/2019/2019-04-30) | [Winger et al, 2019](https://datadryad.org/resource/doi:10.5061/dryad.8rr0498) | [Winger et al, 2019](https://royalsocietypublishing.org/doi/10.1098/rspb.2019.0364#d3e550) |
@@ -111,6 +114,9 @@ Want to submit a useful code-chunk? Please submit as a [Pull Request](https://gi
 | 31 | `2019-07-30` | [Video Games](data/2019/2019-07-30) | [Steam Spy](https://steamspy.com/year/) | [Liza Wood](https://cruiseofdimensionality.home.blog/2019/07/24/pc-video-games-we-still-play/) |
 
 
+<<<<<<< HEAD
+>>>>>>> 52f8d21e6b88e4ceea0ad67ed599ffaa9f2b5a92
+=======
 >>>>>>> 52f8d21e6b88e4ceea0ad67ed599ffaa9f2b5a92
 ***  
 
