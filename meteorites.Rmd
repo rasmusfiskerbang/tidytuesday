@@ -1,0 +1,21 @@
+---
+title: "Untitled"
+author: "Rasmus Fisker Bang"
+date: "6/10/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+
+meteorites <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-06-11/meteorites.csv")
+```
+
+
+```{r}
+meteorites %>% count(class, sort = TRUE)
+```
+
+
+

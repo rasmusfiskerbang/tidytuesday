@@ -11,6 +11,8 @@ library(tidyverse)
 library(ggrepel)
 library(hrbrthemes)
 library(colorspace)
+library(fuzzyjoin)
+library(lubridate)
 
 # Loading data
 player_dob <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-04-09/player_dob.csv")
@@ -21,6 +23,34 @@ grand_slam_timeline <- readr::read_csv("https://raw.githubusercontent.com/rforda
 
 # Setting theme
 theme_set(theme_ipsum_ps())
+
+# Cleaning
+grand_slams <- grand_slams %>% 
+  mutate(tournament = grand_slam %>% str_replace_all("_"," ") %>% str_to_title()) %>% 
+  mutate(tournament = str_replace(tournament, "Us", "US")) %>% 
+  select(year, tournament, everything(), -grand_slam)
+
+# Joining tables
+grand_slam_total <- grand_slam_timeline %>% 
+  left_join(grand_slams %>% select(year, tournament, tournament_date)) %>% 
+  distinct()
+
+grand_slam_total <- grand_slam_total %>% 
+  mutate(match_id = row_number()) %>% 
+  stringdist_left_join(player_dob %>% select(name, date_of_birth), 
+                       by = c("player" = "name"), method = "jw",
+                       distance_col = "distance", max_dist = 0.2) %>% 
+  group_by(match_id) %>% filter(is.na(distance) | distance == min(distance)) %>% 
+  ungroup()
+
+
+grand_slam_total <- grand_slam_total %>% 
+  mutate(first_player = str_extract(player, "[[:alpha:]]+"),
+         first_name = str_extract(name, "[[:alpha:]]+"),
+         ind_same = first_player == first_name,
+         ind_same = coalesce(ind_same, FALSE)) %>% 
+  mutate(date_of_birth = if_else(ind_same, date_of_birth, as.Date(NA))) %>% 
+  select(player:tournament_date, date_of_birth)
 
 ```
 
@@ -28,20 +58,6 @@ theme_set(theme_ipsum_ps())
 
 
 ```{r}
-library(tidyverse)
-library(ggrepel)
-library(hrbrthemes)
-library(colorspace)
-
-# Loading data
-player_dob <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-04-09/player_dob.csv")
-
-grand_slams <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-04-09/grand_slams.csv")
-
-grand_slam_timeline <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-04-09/grand_slam_timeline.csv")
-
-# Setting theme
-theme_set(theme_ipsum_ps())
 
 top_winning_names <- grand_slams %>% group_by(gender, name) %>% 
   summarise(top_n_wins = max(rolling_win_count)) %>% 
@@ -71,6 +87,20 @@ ggsave("n_wins.png", p1, width = 10, height = 10)
 ```
 
 
+### Who were the youngest winners ever?
+
+```{r}
+
+grand_slam_total %>% 
+  mutate(age = interval(date_of_birth,tournament_date)/years(1)) %>% 
+  mutate(semi_decade = year - year %% 5) %>% 
+  group_by(semi_decade) %>% 
+  summarise(mean_age_final = mean(age[outcome %in% c("Won","Finalist")], na.rm = TRUE),
+            mean_age_overall = mean(age, na.rm = TRUE)) %>% ungroup() %>% 
+  gather(variable, age, - semi_decade) %>% 
+  ggplot(aes(semi_decade, age, color = variable)) + geom_line()
+
+```
 
 
 
